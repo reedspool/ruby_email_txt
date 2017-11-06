@@ -1,5 +1,8 @@
 # Send a text from the command line.
 #
+# Dependencies:
+# 	gmail gem
+#
 # Author: Reed Spool
 # 
 # ex.
@@ -9,18 +12,17 @@
 # Update CONFIG area, with YOUR email and password
 # 
 # Might need to update GATEWAYS
+# 
 # See http://www.ukrainecalling.com/email-to-text.aspx
-# or  http://martinfitzpatrick.name/list-of-email-to-sms-gateways/
-# or  http://www.emailtextmessages.com/
-# or search the Internet for "email to sms gatways"
+#     http://martinfitzpatrick.name/list-of-email-to-sms-gateways/
+#     http://www.emailtextmessages.com/
+#     
+#     or search the Internet for "email to sms gatways"
 
 require 'gmail'
+require 'yaml'
 
-# CONFIG
-USER = {
-	email: 'reedmagic@gmail.com',
-	pass: '55cA27oG'.reverse # MD-Backwards-Hash
-}
+CONFIG = YAML.load_file('config.yml')
 
 GATEWAYS = [
 	'message.alltel.com',
@@ -36,23 +38,22 @@ GATEWAYS = [
 ]
 
 # UTILITIES
-def send_splash(number, msg)
+def send_splash(gmail, number, msg)
 	GATEWAYS.each do |g|
-		basic_email "#{number}@#{g}", msg
+		basic_email gmail, "#{number}@#{g}", msg
 	end
 end
 
-def basic_email(addr, msg)
-	GMAIL.deliver do
+def basic_email(gmail, addr, msg)
+	gmail.deliver do
 		to addr
-		text_part { body msg }
+		text_part do
+		  body msg
+		end
 	end
 end
 
 # RUN IT!
-
-# External gmail pkg protocol
-GMAIL = Gmail.new USER[:email], USER[:pass]
-GMAIL.login
-
-send_splash ARGV.shift, ARGV.join(' ')
+Gmail.connect!(CONFIG["email"], CONFIG["pass"]) do |gmail|
+	send_splash gmail, ARGV.shift, ARGV.join(' ')
+end
